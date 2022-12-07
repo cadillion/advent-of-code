@@ -1,8 +1,6 @@
 #![feature(test)]
 extern crate test;
 
-use std::collections::BTreeMap;
-
 pub const EXAMPLE: &str = include_str!("example.txt");
 pub const DATA: &str = include_str!("data.txt");
 
@@ -14,130 +12,64 @@ fn main() {
     println!("Part 2: {r2}");
 }
 
-/// A directory structure that stores the sum of the file sizes inside and a list of child
-/// directories
-#[derive(Clone, Debug)]
-pub struct Directory<'s> {
-    size: usize,
-    children: BTreeMap<&'s str, Self>,
-}
-
-impl<'s> Directory<'s> {
-    /// Creates a new directory
-    pub fn new() -> Self {
-        Self {
-            size: 0,
-            children: BTreeMap::new(),
-        }
-    }
-
-    /// Adds a child to the root directory at path
-    pub fn add_child(&mut self, child: Directory<'s>, mut path: Vec<&'s str>) -> &mut Self {
-        let end = path.pop().unwrap();
-        let parent = self.get_child(path);
-        parent.children.insert(end, child);
-        self
-    }
-
-    /// Adds a file to the specified directory and increments the size of every parent
-    pub fn add_file(&mut self, size: usize, mut path: Vec<&'s str>) -> &mut Self {
-        self.size += size;
-        let mut path = path.iter_mut();
-        path.next();
-        path.fold(self, |acc: &mut Directory, dir| {
-            acc.children.entry(dir).and_modify(|dir| dir.size += size);
-            acc.children.get_mut(dir).unwrap()
-        })
-    }
-
-    /// Gets the child node at path
-    pub fn get_child(&mut self, mut path: Vec<&'s str>) -> &mut Self {
-        let mut path = path.iter_mut();
-        path.next();
-        path.fold(self, |acc: &mut Directory, dir| {
-            acc.children.get_mut(dir).unwrap()
-        })
-    }
-
-    /// Consumes the directory and flattens its children into a vector
-    pub fn consume(&mut self) -> Vec<Self> {
-        let mut vec: Vec<Self> = Vec::new();
-        self.children
-            .iter_mut()
-            .for_each(|(_path, child)| vec.extend(child.consume()));
-        vec.push(self.clone());
-        vec
-    }
-}
-
-/// Iterate through all the commands and build a map of the file_tree
-/// Store the size of all the files on the directory parent.size, and a list of children directories on children
-pub fn build_file_tree<'s>(input: &'s str) -> Directory<'s> {
-    let (_path, root) = input.split("$ cd ").fold(
-        (Vec::new(), Directory::new()),
-        |(mut path, mut parent), block| {
-            // Split the block into the directory and the directory contents
-            let (dir, contents) = match block.split_once("\n$ ls\n") {
-                Some(tuple) => tuple,
-                None => {
-                    path.pop();
-                    return (path, parent);
-                }
-            };
-
-            // Push the current path into the path tracker
-            path.push(dir);
-
-            // For each element of the contents, check if it's a directory or a file
-            // Push directories into parent.childrent and add the files to parent.size
-            contents
-                .lines()
-                .for_each(|line| match line.split_once(' ') {
-                    Some(("dir", subdir)) => {
-                        let child = Directory::new();
-                        let mut child_path = path.clone();
-                        child_path.push(subdir);
-                        parent.add_child(child, child_path);
-                    }
-                    Some((size_str, _file)) => {
-                        parent.add_file(size_str.parse::<usize>().unwrap(), path.clone());
-                    }
-                    _ => unreachable!(),
-                });
-
-            (path, parent)
-        },
-    );
-
-    root
-}
-
 /// Find each directory with less than 100,000 bytes and sum them, even if they are nested in each other
 fn solve_1(input: &str) -> String {
-    build_file_tree(input)
-        .consume()
-        .into_iter()
-        .map(|v| v.size)
-        .filter(|v| v <= &100_000)
-        .sum::<usize>()
-        .to_string()
+    let (acc, _stack) = input
+        .lines()
+        .fold((0, Vec::new()), |(acc, mut stack), line| {
+            match line.as_bytes() {
+                &[.., b'.', b'.'] => match stack.pop().expect("Popped empty array") {
+                    x if x <= 100_000 => (acc + x, stack),
+                    _ => (acc, stack),
+                },
+                &[b'$', b' ', b'c', ..] => {
+                    stack.push(0);
+                    (acc, stack)
+                }
+                &[b'0'..=b'9', ..] => {
+                    let (s, _) = line.split_once(' ').unwrap();
+                    let num: usize = s.parse().unwrap();
+                    stack.iter_mut().for_each(|x| *x += num);
+                    (acc, stack)
+                }
+                _ => (acc, stack),
+            }
+        });
+    acc.to_string()
 }
 
 /// Find the smallest folder you can delete if the available disk space on the hard drive is 70000000 bytes
 /// and the update requires 30000000 bytes free
 fn solve_2(input: &str) -> String {
-    let mut file_tree = build_file_tree(input);
-    let free = 70000000 - file_tree.size;
-    let needed = 30000000 - free;
+    const SPACE: usize = 70000000;
+    const REQUIRED: usize = 30000000;
 
-    file_tree
-        .consume()
-        .into_iter()
-        .map(|v| v.size)
-        .filter(|v| v > &needed)
-        .min()
-        .unwrap()
-        .to_string()
+    let (mut all, stack) = input.lines().fold(
+        (Vec::new(), Vec::new()),
+        |(mut all, mut stack), line| match line.as_bytes() {
+            &[.., b'.', b'.'] => {
+                let size = stack.pop().expect("Popped empty array");
+                all.push(size);
+                (all, stack)
+            }
+            &[b'$', b' ', b'c', ..] => {
+                stack.push(0);
+                (all, stack)
+            }
+            &[b'0'..=b'9', ..] => {
+                let (s, _) = line.split_once(' ').unwrap();
+                let num: usize = s.parse().unwrap();
+                stack.iter_mut().for_each(|x| *x += num);
+                (all, stack)
+            }
+            _ => (all, stack),
+        },
+    );
+    all.extend(stack);
+    all.sort_unstable();
+    let needed = REQUIRED - (SPACE - all.last().unwrap());
+    let smallest = all.iter().find(|x| **x >= needed).unwrap();
+    smallest.to_string()
 }
 
 #[cfg(test)]
