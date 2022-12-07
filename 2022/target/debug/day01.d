@@ -1,0 +1,1 @@
+/Users/colton/advent-2022/target/debug/day01: /Users/colton/advent-2022/src/day01/data.txt /Users/colton/advent-2022/src/day01/example.txt /Users/colton/advent-2022/src/day01/main.rs /Users/colton/advent-2022/src/lib.rs /Users/colton/advent-2022/src/utils.rs
