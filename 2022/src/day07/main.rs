@@ -14,6 +14,8 @@ fn main() {
     println!("Part 2: {r2}");
 }
 
+/// A directory structure that stores the sum of the file sizes inside and a list of child
+/// directories
 #[derive(Clone, Debug)]
 pub struct Directory<'s> {
     size: usize,
@@ -21,6 +23,7 @@ pub struct Directory<'s> {
 }
 
 impl<'s> Directory<'s> {
+    /// Creates a new directory
     pub fn new() -> Self {
         Self {
             size: 0,
@@ -28,6 +31,7 @@ impl<'s> Directory<'s> {
         }
     }
 
+    /// Adds a child to the root directory at path
     pub fn add_child(&mut self, child: Directory<'s>, mut path: Vec<&'s str>) -> &mut Self {
         let end = path.pop().unwrap();
         let parent = self.get_child(path);
@@ -35,6 +39,7 @@ impl<'s> Directory<'s> {
         self
     }
 
+    /// Adds a file to the specified directory and increments the size of every parent
     pub fn add_file(&mut self, size: usize, mut path: Vec<&'s str>) -> &mut Self {
         self.size += size;
         let mut path = path.iter_mut();
@@ -45,6 +50,7 @@ impl<'s> Directory<'s> {
         })
     }
 
+    /// Gets the child node at path
     pub fn get_child(&mut self, mut path: Vec<&'s str>) -> &mut Self {
         let mut path = path.iter_mut();
         path.next();
@@ -53,6 +59,7 @@ impl<'s> Directory<'s> {
         })
     }
 
+    /// Consumes the directory and flattens its children into a vector
     pub fn consume(&mut self) -> Vec<Self> {
         let mut vec: Vec<Self> = Vec::new();
         self.children
@@ -63,10 +70,13 @@ impl<'s> Directory<'s> {
     }
 }
 
+/// Iterate through all the commands and build a map of the file_tree
+/// Store the size of all the files on the directory parent.size, and a list of children directories on children
 pub fn build_file_tree<'s>(input: &'s str) -> Directory<'s> {
     let (_path, root) = input.split("$ cd ").fold(
         (Vec::new(), Directory::new()),
         |(mut path, mut parent), block| {
+            // Split the block into the directory and the directory contents
             let (dir, contents) = match block.split_once("\n$ ls\n") {
                 Some(tuple) => tuple,
                 None => {
@@ -75,8 +85,11 @@ pub fn build_file_tree<'s>(input: &'s str) -> Directory<'s> {
                 }
             };
 
+            // Push the current path into the path tracker
             path.push(dir);
 
+            // For each element of the contents, check if it's a directory or a file
+            // Push directories into parent.childrent and add the files to parent.size
             contents
                 .lines()
                 .for_each(|line| match line.split_once(' ') {
@@ -99,7 +112,6 @@ pub fn build_file_tree<'s>(input: &'s str) -> Directory<'s> {
     root
 }
 
-/// Iterate through the comand line entries and extract the directories along with their subdirectories and files
 /// Find each directory with less than 100,000 bytes and sum them, even if they are nested in each other
 fn solve_1(input: &str) -> String {
     build_file_tree(input)
@@ -111,6 +123,8 @@ fn solve_1(input: &str) -> String {
         .to_string()
 }
 
+/// Find the smallest folder you can delete if the available disk space on the hard drive is 70000000 bytes
+/// and the update requires 30000000 bytes free
 fn solve_2(input: &str) -> String {
     let mut file_tree = build_file_tree(input);
     let free = 70000000 - file_tree.size;
