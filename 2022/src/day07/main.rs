@@ -18,14 +18,19 @@ fn solve_1(input: &str) -> String {
         .lines()
         .fold((0, Vec::new()), |(acc, mut stack), line| {
             match line.as_bytes() {
+                // If the line ends in ".." check the size of the accumulated value and store it in
+                // the accumulator if it is less than 100_000
                 &[.., b'.', b'.'] => match stack.pop().expect("Popped empty array") {
                     x if x <= 100_000 => (acc + x, stack),
                     _ => (acc, stack),
                 },
+                // If the line starts with "$ cd" push a new file size accumulator onto the stack
                 &[b'$', b' ', b'c', ..] => {
                     stack.push(0);
                     (acc, stack)
                 }
+                // If the line starts with a number, parse the number and increase the accumulator for
+                // all parent directories
                 &[b'0'..=b'9', ..] => {
                     let (s, _) = line.split_once(' ').unwrap();
                     let num: usize = s.parse().unwrap();
@@ -44,31 +49,35 @@ fn solve_2(input: &str) -> String {
     const SPACE: usize = 70000000;
     const REQUIRED: usize = 30000000;
 
-    let (mut all, stack) = input.lines().fold(
+    let (mut leaves, stack) = input.lines().fold(
         (Vec::new(), Vec::new()),
-        |(mut all, mut stack), line| match line.as_bytes() {
+        |(mut leaves, mut stack), line| match line.as_bytes() {
+            // If the line ends with ".." push the top of the stack into the accumulator
             &[.., b'.', b'.'] => {
                 let size = stack.pop().expect("Popped empty array");
-                all.push(size);
-                (all, stack)
+                leaves.push(size);
+                (leaves, stack)
             }
+            // If the line starts with "$ cd" push a new accumulator into the stack
             &[b'$', b' ', b'c', ..] => {
                 stack.push(0);
-                (all, stack)
+                (leaves, stack)
             }
+            // If the line starts with a number, parse the number and increase the accumulator for
+            // all parent directories
             &[b'0'..=b'9', ..] => {
                 let (s, _) = line.split_once(' ').unwrap();
                 let num: usize = s.parse().unwrap();
                 stack.iter_mut().for_each(|x| *x += num);
-                (all, stack)
+                (leaves, stack)
             }
-            _ => (all, stack),
+            _ => (leaves, stack),
         },
     );
-    all.extend(stack);
-    all.sort_unstable();
-    let needed = REQUIRED - (SPACE - all.last().unwrap());
-    let smallest = all.iter().find(|x| **x >= needed).unwrap();
+    leaves.extend(stack);
+    leaves.sort_unstable();
+    let needed = REQUIRED - (SPACE - leaves.last().unwrap());
+    let smallest = leaves.iter().find(|x| **x >= needed).unwrap();
     smallest.to_string()
 }
 
