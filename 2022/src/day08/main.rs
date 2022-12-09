@@ -26,32 +26,32 @@ fn visible(
     let height = |x, y| grid[traverse(x, y)];
 
     // Iterate through each row of the grid
-    let (result, _) = (0..depth).into_iter().fold(
-        // Initialize an (index, visibility) map, along with a stack to hold intermediate values
+    let (sight, _) = (0..depth).into_iter().fold(
+        // Initialize a (view, visibility) map, along with a stack to hold intermediate values
         (vec![(0, false); grid.len()], Vec::new()),
-        |(mut result, mut seen), y| {
+        |(mut sight, mut seen), y| {
             // From the end of the direction of vision, step back to the tallest tree
             (0..(1 + start.abs_diff(end) as i64)).rev().for_each(|x| {
                 // While the last item on the stack is shorter than the current, pop it off
-                // the stack and store its index in the map as unseen
+                // the stack and store its directional view in the map with an "unseen" flag
                 while let Some(true) = seen.last().map(|x2| height(x, y) >= height(*x2, y)) {
                     let x2 = seen.pop().unwrap();
-                    result[traverse(x2, y)] = (x2.abs_diff(x), false);
+                    sight[traverse(x2, y)] = (x2.abs_diff(x), false);
                 }
                 // Push the index of the current tree into the stack
                 seen.push(x);
             });
 
-            // Empty the stack and store the index of each visible tree in our visibility map
+            // Empty the stack and store the view of each visible tree in our visibility map
             seen.drain(..).for_each(|x| {
-                result[traverse(x, y)] = (x.unsigned_abs(), true);
+                sight[traverse(x, y)] = (x.unsigned_abs(), true);
             });
 
-            (result, seen)
+            (sight, seen)
         },
     );
 
-    result
+    sight
 }
 
 /// Count the number of digits in the grid that are monotonically increasing from any vertical or
@@ -81,6 +81,7 @@ fn solve_1(input: &str) -> String {
         .to_string()
 }
 
+/// Count the number of digits in the grid that are smaller than the tallest trees
 fn solve_2(input: &str) -> String {
     let bump_map = input
         .lines()
@@ -94,6 +95,7 @@ fn solve_2(input: &str) -> String {
     let west = visible(&bump_map, height, width - 1, 0, 1, width);
     let north = visible(&bump_map, width, height - 1, 0, width, 1);
 
+    // Collect the values and map each tree's combined view in each direction
     east.into_iter()
         .zip(south.into_iter())
         .zip(west.into_iter())

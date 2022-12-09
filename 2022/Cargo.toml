@@ -10,6 +10,13 @@ edition = "2021"
 lto = "fat"
 panic = "abort"
 
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "2022"
+path = "src/day01/main.rs"
+
 [[bin]]
 name = "day01"
 path = "src/day01/main.rs"
@@ -41,3 +48,11 @@ path = "src/day07/main.rs"
 [[bin]]
 name = "day08"
 path = "src/day08/main.rs"
+
+[[bin]]
+name = "day09"
+path = "src/day09/main.rs"
+
+[[bin]]
+name = "dayXX"
+path = "src/dayXX/main.rs"
