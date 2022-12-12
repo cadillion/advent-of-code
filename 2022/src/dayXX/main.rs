@@ -1,4 +1,5 @@
 #![feature(test)]
+#![allow(dead_code)]
 extern crate test;
 
 pub const EXAMPLE: &str = include_str!("example.txt");
@@ -26,7 +27,7 @@ mod tests {
     use test::{black_box, Bencher};
 
     #[test]
-    fn test_X() {
+    fn test_XX() {
         assert_eq!(solve_1(EXAMPLE), "");
         assert_eq!(solve_1(DATA), "");
         assert_eq!(solve_2(EXAMPLE), "");
@@ -34,12 +35,12 @@ mod tests {
     }
 
     #[bench]
-    fn bench_X_1(b: &mut Bencher) {
+    fn bench_XX_1(b: &mut Bencher) {
         b.iter(|| solve_1(black_box(DATA)));
     }
 
     #[bench]
-    fn bench_X_2(b: &mut Bencher) {
+    fn bench_XX_2(b: &mut Bencher) {
         b.iter(|| solve_2(black_box(DATA)));
     }
 }
