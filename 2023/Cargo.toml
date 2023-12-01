@@ -1,0 +1,27 @@
+[package]
+name = "advent-2023"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+
+[profile.release]
+#codegen-units = 1
+lto = "fat"
+panic = "abort"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "2023"
+path = "src/day01/main.rs"
+
+[[bin]]
+name = "day01"
+path = "src/day01/main.rs"
+
+[[bin]]
+name = "dayXX"
+path = "src/dayXX/main.rs"
