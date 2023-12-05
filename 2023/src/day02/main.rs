@@ -80,7 +80,7 @@ mod tests {
         assert_eq!(solve_1(EXAMPLE), "8");
         assert_eq!(solve_1(DATA), "2617");
         assert_eq!(solve_2(EXAMPLE), "2286");
-        assert_eq!(solve_2(DATA), "");
+        assert_eq!(solve_2(DATA), "59795");
     }
 
     #[bench]
